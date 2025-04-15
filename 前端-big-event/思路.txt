@@ -1,0 +1,312 @@
+大事件开发-前端学习路径
+
+	环境准备：
+		1、创建Vue工程
+		2、安装依赖
+			Element-Plus 页面组件库
+			Axios 异步函数库
+			Sass css语言扩展包
+		3、目录调整
+
+	功能开发
+    开发步骤：
+        搭建页面（html标签、css样式）-->绑定数据与事件（表单校验）-->调用后台接口（接口文档、src\api\xx.js封装、页面函数调用）
+            表单校验（Form Validation）是为了保证用户输入的数据符合预期，提高系统的安全性和稳定性，主要目的是：
+
+            提高数据的正确性
+
+            防止用户输入不符合格式的数据（如手机号、邮箱格式错误）。
+            确保数据在存入数据库之前符合业务逻辑要求（如用户名不能为空，密码长度必须符合要求）。
+            增强用户体验
+
+            在用户输入错误时，及时给予友好的提示，而不是提交后才发现错误。
+            让用户能更快速地完成表单填写，减少错误提交的可能性。
+            提高安全性
+
+            防止恶意输入，如 XSS（跨站脚本攻击）、SQL 注入等攻击。
+            过滤非法数据，避免影响数据库或服务器的正常运行。
+            表单校验的类型：
+            前端校验（客户端校验）：在用户提交表单前，用 JavaScript 或 HTML5 的 required、pattern 等属性进行校验，减少服务器压力，但容易被绕过。
+            后端校验（服务器校验）：无论前端是否做了校验，后端必须再进行校验，确保数据的安全性和正确性，通常用 Java（Spring Boot 的 @Valid、@Validated）、Python、Node.js 等后端框架来完成。
+
+		注册
+            搭建页面(一些参数的定义尽量对照接口文档)
+            注册接口的调用
+                参照接口文档
+                封装函数
+                调用
+            完成后点击登录出现跨域问题：
+                在前端服务中配置代理
+                server: {
+                    proxy: {
+                    '/api': {
+                        target: 'http://localhost:8080',
+                        changeOrigin: true,
+                        rewrite: (path) => path.replace(/^\/api/, '')
+                    }
+                    }
+                }
+
+        登录
+            <!-- 登录表单 -->
+             <!-- 复用注册表单的数据 -->
+              <!-- 绑定好数据之后，进行表单校验 也是复用之前的 -->
+               <!-- 然后给登录按钮绑定事件 -->
+                <!-- 提供单击事件函数 -->
+
+                // 登录函数
+                    // 点击登录按钮之后就会触发这个方法
+                    const login = ()=>{
+                        // 调用接口完成登录
+                        // 既然要调用接口，就要提供完成调用接口这一行为的函数 在api.user.js中
+                    }
+
+                // 提供调用登录接口的函数
+                    export const userLoginService = (loginData)=>{
+                        // 登录接口的函数要参考接口文档
+                        // 请求路径，方法，参数，相应的数据
+                        const params = new URLSearchParams();
+                        for(let key in loginData){
+                            params.append(key,loginData[key])
+                        }
+                        return request.post('/user/login',params)
+                    }
+
+            登录失败-->打开redis
+
+            由于登录表单和注册表单公用的一个数据模型
+                登录后的数据也会展示到注册表单上，不合适，更换表单后两者都应该为空
+                点击注册或返回后清空显示的数据
+                定义一个函数，用于清空数据模型的数据
+
+        优化axios相应拦截器
+            //添加响应拦截器
+            instance.interceptors.response.use(
+                result=>{
+                    if(result.data.code===0){
+                        return result.data;
+                    }
+                    // 操作失败
+                    alert(result.data.msg?result.data.msg:'服务异常')
+                    // 异步操作的状态转换为失败
+                    return Promise.reject(result.data);
+                },
+                err=>{
+                    alert('服务异常');
+                    return Promise.reject(err);//异步的状态转化成失败的状态
+                }
+            )
+
+        更改消息提示样式
+            登录成功后跳转到主页面
+
+        主页面
+            通过代码切换主页
+
+            import {useRouter} from 'vue-router'
+            const router = useRouter()
+            const login = async()=>{
+                // 调用接口完成登录
+                // 既然要调用接口，就要提供完成调用接口这一行为的函数 在api.user.js中
+                let result = await userLoginService(registerData.value)
+                if(result.code === 0){
+                    // 成功
+                    ElMessage.success(result.msg ? result.msg : '登录成功');
+                    // 跳转到首页
+                    // 借助路由完成跳转
+                    router.push('/')
+                }else{
+                    ElMessage.error('登录失败');
+                }
+            }
+
+            主体内容部分要根据左边菜单栏的点击实现变换
+            点击菜单后对应的不同的组件可以封装到不同的.vue文件中
+            5个，这5个文件都要展示到Layout.vue中-->二级路由来展示
+                
+        
+
+        路由
+            决定从起点到终点的路径的进程
+            在前端工作中，路由指的是根据不同的访问路径，展示不同的组件内容
+            Vue Router是Vue.js的官方路由
+            
+            使用步骤：
+                安装
+                在src/router/index.js中创建路由器，并导出
+                在vue应用实例中使用vue-router
+                声明router-view标签，展示组件内容
+
+                // 导入
+                import { createRouter, createWebHistory } from "vue-router";
+
+                // 导入组件
+                import LoginVue from '@/views/Login.vue';
+                import LayoutVue from "@/views/Layout.vue";
+
+                // 定义路由关系
+                const routes = [
+                    { path: '/', component: LayoutVue },   // ✅ 主页应该直接是 LayoutVue
+                    { path: '/login', component: LoginVue },
+                ]
+
+
+                // 创建路由器
+                const router = createRouter({
+                    history:createWebHistory(),
+                    routes:routes
+                })
+
+                // 导出路由
+                export default router
+
+                随后在main.js中导入
+
+                在app.vue中声明标签
+
+        子路由
+            准备好5个组件
+            配置子路由
+            声明router-view标签
+            为菜单项el-menu-item设置index属性，设置点击后的路由路径
+
+            在哪里展示就在哪里声明标签
+
+        文章分类页面
+            页面搭建
+            绑定数据模型
+            提供分类列表查询的函数
+            声明异步函数并调用
+            将结果返回到数据模型中
+                但是出现问题，不能正常使用
+                因为后端要求访问数据要携带token，进行身份验证
+                    携带token：
+                        Pinia状态管理库
+                            Vue专属状态管理库，允许跨组件或页面共享状态
+                            安装
+                            在实例中使用
+                            定义store
+                            在组件中使用store
+
+                                import './assets/main.scss'
+
+                                import { createApp } from 'vue'
+                                import ElementPlus from'element-plus'
+                                import 'element-plus/dist/index.css'
+                                import router from '@/router/index.js'
+                                import { createPinia } from 'pinia'
+
+                                import App from './App.vue'
+
+                                const app = createApp(App);
+                                const pinia = createPinia();
+                                app.use(pinia)
+                                app.use(router)
+                                app.use(ElementPlus)
+                                app.mount('#app')
+
+
+                                定义状态
+                                    // 定义store
+                                    import { defineStore } from "pinia";
+
+                                    /**
+                                    * 第一个参数：名字，唯一性
+                                    * 第二个参数：函数，在函数内部可以定义状态的左右内容
+                                    * 
+                                    * 返回值：函数
+                                    */
+                                    export const useTokenStore = defineStore('token',()=>{
+                                        // 定义状态的内容
+
+                                        // 1、响应式变量
+                                        const token = ref('')
+
+                                        // 定义一个函数，修改token的值
+                                        const setToken = (newToken)=>{
+                                            token.value = newToken
+                                        }
+
+                                        // 函数，移除token的值
+                                        const removeToken = ()=>{
+                                            token.value=''
+                                        }
+
+                                        return {
+                                            token,setToken,removeToken
+                                        }
+                                    });
+
+                                
+                                找到需要该方法的地方：
+                                    登录部分：
+                                        当我们登录成功的时候，得到了这个相应的token
+                                        就需要吧token存储到pinia中
+
+                                        import {useTokenStore} from '@/stores/token.js'
+                                        import {useRouter} from 'vue-router'
+                                        const router = useRouter()
+                                        const tokenStore = useTokenStore();
+                                        const login = async()=>{
+                                            // 调用接口完成登录
+                                            // 既然要调用接口，就要提供完成调用接口这一行为的函数 在api.user.js中
+                                            let result = await userLoginService(registerData.value)
+                                            if(result.code === 0){
+                                                // 成功
+                                                ElMessage.success(result.msg ? result.msg : '登录成功');
+                                                // 把得到的token存储到pinia中
+                                                tokenStore.setToken(result.data)
+
+                                在获取文章列表数据之前需要通过请求头把token携带过去
+                                    在article.js中使用token
+
+            添加请求拦截器：
+            
+        现在存在一个bug,登陆成功后查看文章分类，只要一刷新就显示服务异常
+            因为Pinia默认是内存存储，当刷新浏览器的时候会丢失数据
+            Persist插件可以将Pinia中的数据持久化存储
+            Pinia持久化插件-persist
+                安装persist
+                在pinia中使用这个插件
+                定义状态store时指定持久化配置参数
+
+        bug2 进行未登录统一处理
+            // 导入路由器
+                    // import { useRouter } from 'vue-router';
+                    // const router = useRouter();
+                    import router from '@/router';
+                    //添加响应拦截器
+                    instance.interceptors.response.use(
+                        result=>{
+                            return result.data;
+                        },
+                        err => {
+                            // 判断相应状态码，如果相应401，则证明未登录，提示请登录，并跳转到登录页面
+                            if(err.response.status===401){
+                                ElMessage.error('请先登录')
+                                // 然后要跳转到登录页面
+                                // 使用路由器
+                                router.push('/login')
+                            }else{
+                                ElMessage.error('服务异常')
+                            }
+                            return Promise.reject(err);//异步的状态转化成失败的状态
+                        }
+                    )
+
+                    export default instance;
+
+            然后两种router的导入方式不同，要根据不同的文件用不同的导入语句
+
+        添加文章分类模块
+
+        =========================================================
+
+        文章管理模块
+            先进行页面的搭建
+            ArticleManage.vue
+
+            可以发现创建好页面之后会有一些默认数据，但是在实际应用过程中需要显示的数据是要从后台数据库中调用显示出来的
+            所以我们需要在页面一出现时就自动连接到后台，调用访问后台的方法（接口）
+            
+            
